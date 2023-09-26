@@ -89,6 +89,7 @@ FROM python:3.11-slim-buster
 ARG TARGETARCH
 
 ARG DEPENDENCIES="                    \
+        libjpeg-dev                   \
         libxmlsec1-openssl"
 
 ARG TOOLS="                           \
