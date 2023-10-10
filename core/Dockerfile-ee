@@ -83,7 +83,11 @@ RUN --mount=type=cache,target=/root/.cache \
     set -ex \
     && pip install poetry -i ${PIP_MIRROR} \
     && poetry config virtualenvs.create false \
-    && poetry install
+    && poetry install --only=main
+
+RUN --mount=type=cache,target=/root/.cache \
+    set -ex \
+    && poetry install --only=xpack
 
 FROM python:3.11-slim-buster
 ARG TARGETARCH
