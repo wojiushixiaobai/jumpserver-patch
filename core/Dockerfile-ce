@@ -73,8 +73,7 @@ ARG VERSION
 ENV VERSION=$VERSION
 
 WORKDIR /opt/jumpserver
-ADD . .
-RUN cd utils && bash -ixeu build.sh
+ADD poetry.lock pyproject.toml .
 
 ARG PIP_MIRROR=https://pypi.tuna.tsinghua.edu.cn/simple
 RUN --mount=type=cache,target=/root/.cache \
@@ -82,6 +81,9 @@ RUN --mount=type=cache,target=/root/.cache \
     && pip install poetry -i ${PIP_MIRROR} \
     && poetry config virtualenvs.create false \
     && poetry install --only=main
+
+ADD . .
+RUN cd utils && bash -ex build.sh
 
 FROM python:3.11-slim-buster
 ARG TARGETARCH

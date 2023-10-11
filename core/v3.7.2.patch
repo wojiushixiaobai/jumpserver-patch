@@ -91,17 +91,16 @@ index 581f40f..0000000
 -
 -ENTRYPOINT ["./entrypoint.sh"]
 diff --git a/Dockerfile-ee b/Dockerfile-ee
-index b485f1e..04ff112 100644
+index b485f1e..9025d9b 100644
 --- a/Dockerfile-ee
 +++ b/Dockerfile-ee
-@@ -1,9 +1,157 @@
+@@ -1,9 +1,153 @@
  ARG VERSION
  FROM registry.fit2cloud.com/jumpserver/xpack:${VERSION} as build-xpack
 -FROM jumpserver/core:${VERSION}
 +FROM python:3.11-slim-buster as stage-build
 +ARG TARGETARCH
  
--COPY --from=build-xpack /opt/xpack /opt/jumpserver/apps/xpack
 +ARG BUILD_DEPENDENCIES="              \
 +        g++                           \
 +        make                          \
@@ -174,19 +173,18 @@ index b485f1e..04ff112 100644
 +ENV VERSION=$VERSION
 +
 +WORKDIR /opt/jumpserver
-+ADD . .
-+RUN cd utils && bash -ixeu build.sh
++ADD poetry.lock pyproject.toml .
 +
 +ARG PIP_MIRROR=https://pypi.tuna.tsinghua.edu.cn/simple
 +RUN --mount=type=cache,target=/root/.cache \
 +    set -ex \
 +    && pip install poetry -i ${PIP_MIRROR} \
 +    && poetry config virtualenvs.create false \
-+    && poetry install --only=main
-+
-+RUN --mount=type=cache,target=/root/.cache \
-+    set -ex \
++    && poetry install --only=main \
 +    && poetry install --only=xpack
++
++ADD . .
++RUN cd utils && bash -ex build.sh
 +
 +FROM python:3.11-slim-buster
 +ARG TARGETARCH
@@ -211,7 +209,7 @@ index b485f1e..04ff112 100644
 +        vim                           \
 +        nmap                          \
 +        wget"
- 
++
 +ARG APT_MIRROR=http://mirrors.ustc.edu.cn
 +
 +RUN --mount=type=cache,target=/var/cache/apt,sharing=locked,id=core \
@@ -231,8 +229,9 @@ index b485f1e..04ff112 100644
 +    && rm -rf /var/lib/apt/lists/*
 +
 +COPY --from=stage-build /opt/jumpserver/release/jumpserver /opt/jumpserver
+ COPY --from=build-xpack /opt/xpack /opt/jumpserver/apps/xpack
 +WORKDIR /opt/jumpserver
-+
+ 
 +ARG PIP_MIRROR=https://pypi.tuna.tsinghua.edu.cn/simple
  RUN --mount=type=cache,target=/root/.cache \
      set -ex \
@@ -241,11 +240,7 @@ index b485f1e..04ff112 100644
 +    && echo > /opt/jumpserver/config.yml \
 +    && pip install poetry -i ${PIP_MIRROR} \
 +    && poetry config virtualenvs.create false \
-+    && poetry install --only=main
-+
-+COPY --from=build-xpack /opt/xpack /opt/jumpserver/apps/xpack
-+RUN --mount=type=cache,target=/root/.cache \
-+    set -ex \
++    && poetry install --only=main \
 +    && poetry install --only=xpack
 +
 +VOLUME /opt/jumpserver/data
