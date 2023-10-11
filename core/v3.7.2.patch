@@ -91,7 +91,7 @@ index 581f40f..0000000
 -
 -ENTRYPOINT ["./entrypoint.sh"]
 diff --git a/Dockerfile-ee b/Dockerfile-ee
-index b485f1e..9025d9b 100644
+index b485f1e..88f3452 100644
 --- a/Dockerfile-ee
 +++ b/Dockerfile-ee
 @@ -1,9 +1,153 @@
@@ -134,7 +134,7 @@ index b485f1e..9025d9b 100644
 +
 +ARG APT_MIRROR=http://mirrors.ustc.edu.cn
 +
-+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked,id=core \
++RUN --mount=type=cache,target=/var/cache/apt,sharing=locked,id=core-ee \
 +    sed -i "s@http://.*.debian.org@${APT_MIRROR}@g" /etc/apt/sources.list \
 +    && rm -f /etc/apt/apt.conf.d/docker-clean \
 +    && ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime \
@@ -176,7 +176,7 @@ index b485f1e..9025d9b 100644
 +ADD poetry.lock pyproject.toml .
 +
 +ARG PIP_MIRROR=https://pypi.tuna.tsinghua.edu.cn/simple
-+RUN --mount=type=cache,target=/root/.cache \
++RUN --mount=type=cache,target=/root/.cache,sharing=shared,id=core-ee \
 +    set -ex \
 +    && pip install poetry -i ${PIP_MIRROR} \
 +    && poetry config virtualenvs.create false \
@@ -184,7 +184,7 @@ index b485f1e..9025d9b 100644
 +    && poetry install --only=xpack
 +
 +ADD . .
-+RUN cd utils && bash -ex build.sh
++RUN cd utils && bash -ixeu build.sh
 +
 +FROM python:3.11-slim-buster
 +ARG TARGETARCH
@@ -212,7 +212,7 @@ index b485f1e..9025d9b 100644
 +
 +ARG APT_MIRROR=http://mirrors.ustc.edu.cn
 +
-+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked,id=core \
++RUN --mount=type=cache,target=/var/cache/apt,sharing=locked,id=core-ee \
 +    sed -i "s@http://.*.debian.org@${APT_MIRROR}@g" /etc/apt/sources.list \
 +    && rm -f /etc/apt/apt.conf.d/docker-clean \
 +    && ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime \
@@ -232,8 +232,9 @@ index b485f1e..9025d9b 100644
  COPY --from=build-xpack /opt/xpack /opt/jumpserver/apps/xpack
 +WORKDIR /opt/jumpserver
  
+-RUN --mount=type=cache,target=/root/.cache \
 +ARG PIP_MIRROR=https://pypi.tuna.tsinghua.edu.cn/simple
- RUN --mount=type=cache,target=/root/.cache \
++RUN --mount=type=cache,target=/root/.cache,sharing=shared,id=core-ee \
      set -ex \
 -    && poetry install --only=xpack
 \ No newline at end of file
