@@ -34,8 +34,8 @@ ARG TOOLS="                           \
 
 ARG APT_MIRROR=http://mirrors.ustc.edu.cn
 
-RUN --mount=type=cache,target=/var/cache/apt,sharing=locked,id=core-ce \
-    --mount=type=cache,target=/var/lib/apt,sharing=locked,id=core-ce \
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked,id=core-apt \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked,id=core-apt \
     sed -i "s@http://.*.debian.org@${APT_MIRROR}@g" /etc/apt/sources.list \
     && rm -f /etc/apt/apt.conf.d/docker-clean \
     && apt-get update \
@@ -55,17 +55,19 @@ RUN set -ex \
         rustArch="${TARGETARCH}"; \
         mkdir -p /opt/rust-install; \
         if [ "${TARGETARCH}" == "loong64" ]; then \
-            rustUrl="https://rust-lang.loongnix.cn/dist/${RUST_VERSION}/2023-08-10"; \
+            rustUrl="https://download.jumpserver.org/rust/dist"; \
             rustArch="loongarch64"; \
         fi; \
         if [ "${TARGETARCH}" == "ppc64le" ]; then \
             rustArch="powerpc64le"; \
         fi; \
-        wget -O /opt/rust.tar.gz "${rustUrl}/rust-${RUST_VERSION}-${rustArch}-unknown-linux-gnu.tar.xz"; \
+        wget -qO /opt/rust.tar.gz "${rustUrl}/rust-${RUST_VERSION}-${rustArch}-unknown-linux-gnu.tar.xz"; \
         tar -xf /opt/rust.tar.gz -C /opt/rust-install --strip-components=1; \
         cd /opt/rust-install && ./install.sh; \
         cd /opt; \
         rm -rf /opt/rust.tar.gz /opt/rust-install; \
+        mkdir -p ${CARGO_HOME:-$HOME/.cargo}; \
+        echo -e '[source.crates-io]\nreplace-with = "ustc"\n\n[source.ustc]\nregistry = "sparse+https://mirrors.ustc.edu.cn/crates.io-index/"' > ${CARGO_HOME:-$HOME/.cargo}/config; \
     fi
 
 ARG VERSION
@@ -74,10 +76,11 @@ ENV VERSION=$VERSION
 WORKDIR /opt/jumpserver
 
 ARG PIP_MIRROR=https://pypi.tuna.tsinghua.edu.cn/simple
-RUN --mount=type=cache,target=/root/.cache,sharing=shared,id=core-ce \
+RUN --mount=type=cache,target=/root/.cache,sharing=shared,id=core-pip \
     --mount=type=bind,source=poetry.lock,target=poetry.lock \
     --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
     set -ex \
+    && pip install $(grep cryptography pyproject.toml | sed 's/ = /==/g' | sed 's/"//g') -i ${PIP_MIRROR} \
     && pip install poetry -i ${PIP_MIRROR} \
     && poetry config virtualenvs.create false \
     && poetry install --only=main
@@ -111,8 +114,8 @@ ARG TOOLS="                           \
 
 ARG APT_MIRROR=http://mirrors.ustc.edu.cn
 
-RUN --mount=type=cache,target=/var/cache/apt,sharing=locked,id=core-ce \
-    --mount=type=cache,target=/var/lib/apt,sharing=locked,id=core-ce \
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked,id=core-apt \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked,id=core-apt \
     sed -i "s@http://.*.debian.org@${APT_MIRROR}@g" /etc/apt/sources.list \
     && rm -f /etc/apt/apt.conf.d/docker-clean \
     && ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime \
@@ -130,9 +133,10 @@ COPY --from=stage-build /opt/jumpserver/release/jumpserver /opt/jumpserver
 WORKDIR /opt/jumpserver
 
 ARG PIP_MIRROR=https://pypi.tuna.tsinghua.edu.cn/simple
-RUN --mount=type=cache,target=/root/.cache,sharing=shared,id=core-ce \
+RUN --mount=type=cache,target=/root/.cache,sharing=shared,id=core-pip \
     set -ex \
     && echo > /opt/jumpserver/config.yml \
+    && pip install $(grep cryptography pyproject.toml | sed 's/ = /==/g' | sed 's/"//g') -i ${PIP_MIRROR} \
     && pip install poetry -i ${PIP_MIRROR} \
     && poetry config virtualenvs.create false \
     && poetry install --only=main
