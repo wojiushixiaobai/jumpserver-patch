@@ -1,4 +1,15 @@
-FROM python:3.11-slim-buster as stage-build
+FROM python:3.11-slim-buster as stage-1
+ARG TARGETARCH
+
+ARG VERSION
+ENV VERSION=$VERSION
+
+WORKDIR /opt/jumpserver
+ADD . .
+RUN echo > /opt/jumpserver/config.yml \
+    && cd utils && bash -ixeu build.sh
+
+FROM python:3.11-slim-buster as stage-2
 ARG TARGETARCH
 
 ARG BUILD_DEPENDENCIES="              \
@@ -33,7 +44,6 @@ ARG TOOLS="                           \
         wget"
 
 ARG APT_MIRROR=http://mirrors.ustc.edu.cn
-
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked,id=core-apt \
     --mount=type=cache,target=/var/lib/apt,sharing=locked,id=core-apt \
     sed -i "s@http://.*.debian.org@${APT_MIRROR}@g" /etc/apt/sources.list \
@@ -70,9 +80,6 @@ RUN set -ex \
         echo -e '[source.crates-io]\nreplace-with = "ustc"\n\n[source.ustc]\nregistry = "sparse+https://mirrors.ustc.edu.cn/crates.io-index/"' > ${CARGO_HOME:-$HOME/.cargo}/config; \
     fi
 
-ARG VERSION
-ENV VERSION=$VERSION
-
 WORKDIR /opt/jumpserver
 
 ARG PIP_MIRROR=https://pypi.tuna.tsinghua.edu.cn/simple
@@ -80,19 +87,19 @@ RUN --mount=type=cache,target=/root/.cache,sharing=shared,id=core-pip \
     --mount=type=bind,source=poetry.lock,target=poetry.lock \
     --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
     set -ex \
+    && python3 -m venv /opt/py3 \
     && pip install $(grep cryptography pyproject.toml | sed 's/ = /==/g' | sed 's/"//g') -i ${PIP_MIRROR} \
     && pip install poetry -i ${PIP_MIRROR} \
     && poetry config virtualenvs.create false \
+    && . /opt/py3/bin/activate \
     && poetry install --only=main
-
-ADD . .
-RUN cd utils && bash -ixeu build.sh
 
 FROM python:3.11-slim-buster
 ARG TARGETARCH
 
 ARG DEPENDENCIES="                    \
         libjpeg-dev                   \
+        libx11-dev                    \
         libxmlsec1-openssl"
 
 ARG TOOLS="                           \
@@ -113,7 +120,6 @@ ARG TOOLS="                           \
         wget"
 
 ARG APT_MIRROR=http://mirrors.ustc.edu.cn
-
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked,id=core-apt \
     --mount=type=cache,target=/var/lib/apt,sharing=locked,id=core-apt \
     sed -i "s@http://.*.debian.org@${APT_MIRROR}@g" /etc/apt/sources.list \
@@ -129,17 +135,13 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked,id=core-apt \
     && sed -i "s@# export @export @g" ~/.bashrc \
     && sed -i "s@# alias @alias @g" ~/.bashrc
 
-COPY --from=stage-build /opt/jumpserver/release/jumpserver /opt/jumpserver
+COPY --from=stage-2 /opt/py3 /opt/py3
+COPY --from=stage-1 /opt/jumpserver/release/jumpserver /opt/jumpserver
+
 WORKDIR /opt/jumpserver
 
-ARG PIP_MIRROR=https://pypi.tuna.tsinghua.edu.cn/simple
-RUN --mount=type=cache,target=/root/.cache,sharing=shared,id=core-pip \
-    set -ex \
-    && echo > /opt/jumpserver/config.yml \
-    && pip install $(grep cryptography pyproject.toml | sed 's/ = /==/g' | sed 's/"//g') -i ${PIP_MIRROR} \
-    && pip install poetry -i ${PIP_MIRROR} \
-    && poetry config virtualenvs.create false \
-    && poetry install --only=main
+ARG VERSION
+ENV VERSION=$VERSION
 
 VOLUME /opt/jumpserver/data
 VOLUME /opt/jumpserver/logs
