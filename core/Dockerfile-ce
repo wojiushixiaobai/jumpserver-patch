@@ -144,7 +144,6 @@ ARG VERSION
 ENV VERSION=$VERSION
 
 VOLUME /opt/jumpserver/data
-VOLUME /opt/jumpserver/logs
 
 ENV LANG=zh_CN.UTF-8
 
