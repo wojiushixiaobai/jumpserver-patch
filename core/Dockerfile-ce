@@ -48,6 +48,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked,id=core-apt \
     --mount=type=cache,target=/var/lib/apt,sharing=locked,id=core-apt \
     sed -i "s@http://.*.debian.org@${APT_MIRROR}@g" /etc/apt/sources.list \
     && rm -f /etc/apt/apt.conf.d/docker-clean \
+    && ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime \
     && apt-get update \
     && apt-get -y install --no-install-recommends ${BUILD_DEPENDENCIES} \
     && apt-get -y install --no-install-recommends ${DEPENDENCIES} \
@@ -92,7 +93,7 @@ RUN --mount=type=cache,target=/root/.cache,sharing=shared,id=core-pip \
     && pip install poetry -i ${PIP_MIRROR} \
     && poetry config virtualenvs.create false \
     && . /opt/py3/bin/activate \
-    && poetry install --only=main
+    && poetry install
 
 FROM python:3.11-slim-buster
 ARG TARGETARCH
@@ -107,16 +108,14 @@ ARG TOOLS="                           \
         curl                          \
         default-libmysqlclient-dev    \
         default-mysql-client          \
-        inetutils-ping                \
+        iputils-ping                  \
         locales                       \
+        nmap                          \
         openssh-client                \
         patch                         \
-        procps                        \
         sshpass                       \
         telnet                        \
-        unzip                         \
         vim                           \
-        nmap                          \
         wget"
 
 ARG APT_MIRROR=http://mirrors.ustc.edu.cn
