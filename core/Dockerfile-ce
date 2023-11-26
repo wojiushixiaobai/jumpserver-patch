@@ -97,6 +97,8 @@ RUN --mount=type=cache,target=/root/.cache,sharing=shared,id=core-pip \
 
 FROM python:3.11-slim-buster
 ARG TARGETARCH
+ENV LANG=zh_CN.UTF-8 \
+    PATH=/opt/py3/bin:$PATH
 
 ARG DEPENDENCIES="                    \
         libjpeg-dev                   \
@@ -143,8 +145,6 @@ ARG VERSION
 ENV VERSION=$VERSION
 
 VOLUME /opt/jumpserver/data
-
-ENV LANG=zh_CN.UTF-8
 
 EXPOSE 8080
 
