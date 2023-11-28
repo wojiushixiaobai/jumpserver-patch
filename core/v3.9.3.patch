@@ -1,0 +1,78 @@
+diff --git a/Dockerfile-ce b/Dockerfile-ce
+index be974828f..298eec978 100644
+--- a/Dockerfile-ce
++++ b/Dockerfile-ce
+@@ -1,4 +1,4 @@
+-FROM python:3.11-slim-bullseye as stage-1
++FROM python:3.11-slim-buster as stage-1
+ ARG TARGETARCH
+ 
+ ARG VERSION
+@@ -9,7 +9,7 @@ ADD . .
+ RUN echo > /opt/jumpserver/config.yml \
+     && cd utils && bash -ixeu build.sh
+ 
+-FROM python:3.11-slim-bullseye as stage-2
++FROM python:3.11-slim-buster as stage-2
+ ARG TARGETARCH
+ 
+ ARG BUILD_DEPENDENCIES="              \
+@@ -55,20 +55,47 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked,id=core-apt \
+     && apt-get -y install --no-install-recommends ${TOOLS} \
+     && echo "no" | dpkg-reconfigure dash
+ 
++WORKDIR /opt
++
++ARG RUST_VERSION=1.71.1
++RUN set -ex \
++    && cd /opt \
++    && \
++    if [ "${TARGETARCH}" == "s390x" ] || [ "${TARGETARCH}" == "ppc64le" ] || [ "${TARGETARCH}" == "loong64" ]; then \
++        rustUrl="https://static.rust-lang.org/dist"; \
++        rustArch="${TARGETARCH}"; \
++        mkdir -p /opt/rust-install; \
++        if [ "${TARGETARCH}" == "loong64" ]; then \
++            rustUrl="https://download.jumpserver.org/rust/dist"; \
++            rustArch="loongarch64"; \
++        fi; \
++        if [ "${TARGETARCH}" == "ppc64le" ]; then \
++            rustArch="powerpc64le"; \
++        fi; \
++        wget -qO /opt/rust.tar.gz "${rustUrl}/rust-${RUST_VERSION}-${rustArch}-unknown-linux-gnu.tar.xz"; \
++        tar -xf /opt/rust.tar.gz -C /opt/rust-install --strip-components=1; \
++        cd /opt/rust-install && ./install.sh; \
++        cd /opt; \
++        rm -rf /opt/rust.tar.gz /opt/rust-install; \
++        mkdir -p ${CARGO_HOME:-$HOME/.cargo}; \
++        echo -e '[source.crates-io]\nreplace-with = "ustc"\n\n[source.ustc]\nregistry = "sparse+https://mirrors.tuna.tsinghua.edu.cn/crates.io-index/"' > ${CARGO_HOME:-$HOME/.cargo}/config; \
++    fi
++
+ WORKDIR /opt/jumpserver
+ 
+ ARG PIP_MIRROR=https://pypi.tuna.tsinghua.edu.cn/simple
+-RUN --mount=type=cache,target=/root/.cache \
+-    --mount=type=bind,source=poetry.lock,target=/opt/jumpserver/poetry.lock \
+-    --mount=type=bind,source=pyproject.toml,target=/opt/jumpserver/pyproject.toml \
++RUN --mount=type=cache,target=/root/.cache,sharing=shared,id=core-pip \
++    --mount=type=bind,source=poetry.lock,target=poetry.lock \
++    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+     set -ex \
+     && python3 -m venv /opt/py3 \
++    && pip install $(grep cryptography pyproject.toml | sed 's/ = /==/g' | sed 's/"//g') -i ${PIP_MIRROR} \
+     && pip install poetry -i ${PIP_MIRROR} \
+     && poetry config virtualenvs.create false \
+     && . /opt/py3/bin/activate \
+     && poetry install
+ 
+-FROM python:3.11-slim-bullseye
++FROM python:3.11-slim-buster
+ ARG TARGETARCH
+ ENV LANG=zh_CN.UTF-8 \
+     PATH=/opt/py3/bin:$PATH
+@@ -121,4 +148,4 @@ VOLUME /opt/jumpserver/data
+ 
+ EXPOSE 8080
+ 
+-ENTRYPOINT ["./entrypoint.sh"]
++ENTRYPOINT ["./entrypoint.sh"]
+\ No newline at end of file

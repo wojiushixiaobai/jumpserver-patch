@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "jumpserver"
-version = "v3.5"
+version = "v3.9.3"
 description = "广受欢迎的开源堡垒机"
 authors = ["ibuler <ibuler@qq.com>"]
 license = "GPLv3"
@@ -102,11 +102,7 @@ pytz = "2023.3"
 django-proxy = "1.2.2"
 python-daemon = "3.0.1"
 eventlet = "0.33.3"
-# greenlet = "2.0.2"
-greenlet = [
-    { url = "https://download.jumpserver.org/pypi/simple/greenlet/greenlet-2.0.2-cp311-cp311-linux_loongarch64.whl", markers = "sys_platform == 'linux' and platform_machine == 'loongarch64'" },
-    { version = "2.0.2", source = "tsinghua", markers = "platform_machine != 'loongarch64'" }
-]
+greenlet = "3.0.1"
 gunicorn = "21.2.0"
 celery = "5.3.1"
 flower = "2.0.1"
@@ -155,13 +151,7 @@ azure-identity = "1.13.0"
 azure-mgmt-compute = "30.0.0"
 azure-mgmt-network = "23.1.0"
 google-cloud-compute = "1.13.0"
-# grpcio = "1.56.2"
-grpcio = [
-    { url = "https://download.jumpserver.org/pypi/simple/grpcio/grpcio-1.56.2-cp311-cp311-linux_loongarch64.whl", markers = "sys_platform == 'linux' and platform_machine == 'loongarch64'" },
-    { url = "https://download.jumpserver.org/pypi/simple/grpcio/grpcio-1.56.2-cp311-cp311-linux_s390x.whl", markers = "sys_platform == 'linux' and platform_machine == 's390x'" },
-    { url = "https://download.jumpserver.org/pypi/simple/grpcio/grpcio-1.56.2-cp311-cp311-linux_ppc64le.whl", markers = "sys_platform == 'linux' and platform_machine == 'ppc64le'" },
-    { version = "1.56.2", source = "tsinghua", markers = "platform_machine != 'loongarch64' and platform_machine != 's390x' and platform_machine != 'ppc64le'" }
-]
+grpcio = "1.56.2"
 alibabacloud-dysmsapi20170525 = "2.0.24"
 python-novaclient = "18.3.0"
 python-keystoneclient = "5.1.0"

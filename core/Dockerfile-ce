@@ -78,7 +78,7 @@ RUN set -ex \
         cd /opt; \
         rm -rf /opt/rust.tar.gz /opt/rust-install; \
         mkdir -p ${CARGO_HOME:-$HOME/.cargo}; \
-        echo -e '[source.crates-io]\nreplace-with = "ustc"\n\n[source.ustc]\nregistry = "sparse+https://mirrors.ustc.edu.cn/crates.io-index/"' > ${CARGO_HOME:-$HOME/.cargo}/config; \
+        echo -e '[source.crates-io]\nreplace-with = "ustc"\n\n[source.ustc]\nregistry = "sparse+https://mirrors.tuna.tsinghua.edu.cn/crates.io-index/"' > ${CARGO_HOME:-$HOME/.cargo}/config; \
     fi
 
 WORKDIR /opt/jumpserver
