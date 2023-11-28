@@ -82,6 +82,7 @@ RUN set -ex \
     fi
 
 WORKDIR /opt/jumpserver
+ENV GRPC_PYTHON_BUILD_SYSTEM_OPENSSL=1
 
 ARG PIP_MIRROR=https://pypi.tuna.tsinghua.edu.cn/simple
 RUN --mount=type=cache,target=/root/.cache,sharing=shared,id=core-pip \
