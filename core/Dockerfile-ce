@@ -102,6 +102,7 @@ ENV LANG=zh_CN.UTF-8 \
     PATH=/opt/py3/bin:$PATH
 
 ARG DEPENDENCIES="                    \
+        freerdp2-dev                  \
         libjpeg-dev                   \
         libx11-dev                    \
         libxmlsec1-openssl"

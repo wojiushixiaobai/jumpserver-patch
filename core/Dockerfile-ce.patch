@@ -1,5 +1,5 @@
 diff --git a/Dockerfile-ce b/Dockerfile-ce
-index be974828f..298eec978 100644
+index 9154942..9943ae1 100644
 --- a/Dockerfile-ce
 +++ b/Dockerfile-ce
 @@ -1,4 +1,4 @@
@@ -17,7 +17,7 @@ index be974828f..298eec978 100644
  ARG TARGETARCH
  
  ARG BUILD_DEPENDENCIES="              \
-@@ -55,20 +55,47 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked,id=core-apt \
+@@ -55,28 +55,56 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked,id=core-apt \
      && apt-get -y install --no-install-recommends ${TOOLS} \
      && echo "no" | dpkg-reconfigure dash
  
@@ -48,6 +48,7 @@ index be974828f..298eec978 100644
 +    fi
 +
  WORKDIR /opt/jumpserver
++ENV GRPC_PYTHON_BUILD_SYSTEM_OPENSSL=1
  
  ARG PIP_MIRROR=https://pypi.tuna.tsinghua.edu.cn/simple
 -RUN --mount=type=cache,target=/root/.cache \
@@ -69,7 +70,16 @@ index be974828f..298eec978 100644
  ARG TARGETARCH
  ENV LANG=zh_CN.UTF-8 \
      PATH=/opt/py3/bin:$PATH
-@@ -121,4 +148,4 @@ VOLUME /opt/jumpserver/data
+ 
+ ARG DEPENDENCIES="                    \
++        freerdp2-dev                  \
+         libjpeg-dev                   \
+         libx11-dev                    \
+-        freerdp2-dev                  \
+         libxmlsec1-openssl"
+ 
+ ARG TOOLS="                           \
+@@ -122,4 +150,4 @@ VOLUME /opt/jumpserver/data
  
  EXPOSE 8080
  
