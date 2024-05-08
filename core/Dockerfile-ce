@@ -19,11 +19,11 @@ ARG BUILD_DEPENDENCIES="              \
 
 ARG DEPENDENCIES="                    \
         freetds-dev                   \
-        libpq-dev                     \
         libffi-dev                    \
         libjpeg-dev                   \
         libkrb5-dev                   \
         libldap2-dev                  \
+        libpq-dev                     \
         libsasl2-dev                  \
         libssl-dev                    \
         libxml2-dev                   \
@@ -57,7 +57,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked,id=core-apt \
 
 WORKDIR /opt
 
-ARG RUST_VERSION=1.71.1
+ARG RUST_VERSION=1.77.0
 RUN set -ex \
     && cd /opt \
     && \
@@ -72,11 +72,11 @@ RUN set -ex \
         if [ "${TARGETARCH}" == "ppc64le" ]; then \
             rustArch="powerpc64le"; \
         fi; \
-        wget -qO /opt/rust.tar.gz "${rustUrl}/rust-${RUST_VERSION}-${rustArch}-unknown-linux-gnu.tar.xz"; \
-        tar -xf /opt/rust.tar.gz -C /opt/rust-install --strip-components=1; \
+        wget -qO /opt/rust.tar.xz "${rustUrl}/rust-${RUST_VERSION}-${rustArch}-unknown-linux-gnu.tar.xz"; \
+        tar -xf /opt/rust.tar.xz -C /opt/rust-install --strip-components=1; \
         cd /opt/rust-install && ./install.sh; \
         cd /opt; \
-        rm -rf /opt/rust.tar.gz /opt/rust-install; \
+        rm -rf /opt/rust.tar.xz /opt/rust-install; \
         mkdir -p ${CARGO_HOME:-$HOME/.cargo}; \
         echo -e '[source.crates-io]\nreplace-with = "ustc"\n\n[source.ustc]\nregistry = "sparse+https://mirrors.tuna.tsinghua.edu.cn/crates.io-index/"' > ${CARGO_HOME:-$HOME/.cargo}/config; \
     fi
@@ -90,7 +90,6 @@ RUN --mount=type=cache,target=/root/.cache,sharing=shared,id=core-pip \
     --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
     set -ex \
     && python3 -m venv /opt/py3 \
-    && pip install $(grep cryptography pyproject.toml | sed 's/ = /==/g' | sed 's/"//g') -i ${PIP_MIRROR} \
     && pip install poetry -i ${PIP_MIRROR} \
     && poetry config virtualenvs.create false \
     && . /opt/py3/bin/activate \
@@ -103,7 +102,8 @@ ENV LANG=zh_CN.UTF-8 \
 
 ARG DEPENDENCIES="                    \
         freerdp2-dev                  \
-        libjpeg-dev                   \
+        libldap2-dev                  \
+        libpq-dev                     \
         libx11-dev                    \
         libxmlsec1-openssl"
 
@@ -114,13 +114,10 @@ ARG TOOLS="                           \
         default-mysql-client          \
         iputils-ping                  \
         locales                       \
-        nmap                          \
         openssh-client                \
-        patch                         \
         sshpass                       \
         telnet                        \
-        vim                           \
-        wget"
+        vim"
 
 ARG APT_MIRROR=http://mirrors.ustc.edu.cn
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked,id=core-apt \
